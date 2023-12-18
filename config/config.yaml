@@ -4,6 +4,7 @@ default-resources:
   - nodes=1
   - cpus_per_task=10
   - ntasks=1
+  - mem_mb=20000
 restart-times: 3
 max-jobs-per-second: 10
 latency-wait: 60
