@@ -2,48 +2,13 @@
 #input: bbduk_downstream files (pair-ended sequence)
 #output: checkm
 
-(SMPS,PAIR) = glob_wildcards("data/bbduk_downstream/T2D_2/{sample}_{pair}.fastq.gz")
+(SMPS,PAIR) = glob_wildcards("data/bbduk/T2D_2/{sample}_{pair}.fastq.gz")
 print(list(set(SMPS)))
-
-rule all_bwa:
-  input:expand("data/bwa_mem/T2D_2/{sample}.bam", sample=SMPS)
-
-rule bwa_aln:
-  input:
-    in1="data/bbduk_downstream/T2D_2/{sample}_1.fastq.gz",
-    in2="data/bbduk_downstream/T2D_2/{sample}_2.fastq.gz"
-  output:
-    "data/bwa_mem/T2D_2/{sample}.bam"
-  conda:
-    "env.yaml",
-  shell:
-    "bwa mem /fs/project/bradley.720/db/nonprokaryotic_genomes/gencode/44/all/GRCh38.p14.genome.fa.gz {input.in1} {input.in2} > {output}"
-"""
-rule bam_to_sam:
-  input:
-    "data/bwa_mem/T2D_2/{sample}.bam",
-  output:
-    "data/samtool/T2D_2/{sample}.sam",
-  conda:
-    "env.yaml",
-  shell:
-    "samtools view -hbS -F4 {input} > {output}"
-
-rule sam_to_fastq:
-  input:
-    "data/bwa_mem/T2D_2/{sample}.bam",
-  output:
-    out1="data/aligned_fastq/T2D_2/{sample}_1.fastq.gz",
-    out2="data/aligned_fastq/T2D_2/{sample}_2.fastq.gz"
-  conda:
-    "env.yaml"
-  shell:
-    "samtools fastq -@ 8 {input} -1 {output.out1} -2 {output.out2} -0 /dev/null -s /dev/null -n"
 
 rule assembly:
   input:
-    in1="data/aligned_fastq/T2D_2/{sample}_1.fastq.gz",
-    in2="data/aligned_fastq/T2D_2/{sample}_2.fastq.gz"
+    in1="data/bbduk/T2D_2/{sample}_1.fastq.gz",
+    in2="data/bbduk/T2D_2/{sample}_2.fastq.gz"
   output:
     directory("data/megahit/T2D_2/{sample}")
   conda:
@@ -54,14 +19,14 @@ rule assembly:
 rule binning:
   input:
     contig="data/megahit/T2D_2/{sample}/final_contigs.fa",
-    reads="data/aligned_fastq/T2D_2/{sample}_1.fastq.gz",
-    reads2="data/aligned_fastq/T2D_2/{sample}_2.fastq.gz"
+    reads="data/bbduk/T2D_2/{sample}_1.fastq.gz",
+    reads2="data/bbduk/T2D_2/{sample}_2.fastq.gz"
   output:
     "data/maxbin/T2D_2/{sample}/"}
   conda:
   shell:
     "run_Maxbin.pl -thread 8 -contig {input.contig} -reads {input.reads} -reads2 {input.reads2} -out {output}"
-"""
+
 #rules to be written: checkm, dram
   
  
