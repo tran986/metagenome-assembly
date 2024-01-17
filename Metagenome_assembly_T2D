@@ -1,34 +1,61 @@
 #run on T2D_5 and T2D_2 first:
 #input: bbduk_downstream files (pair-ended sequence)
+#run on T2D_5 and T2D_2 first:
+#input: bbduk_downstream files (pair-ended sequence)
 #output: checkm
 
-(SMPS,PAIR) = glob_wildcards("data/bbduk/T2D_2/{sample}_{pair}.fastq.gz")
+[SMPS,PAIR] = glob_wildcards("bbduk/T2D_2/{sample}_{pair}.fastq.gz")
 print(list(set(SMPS)))
+
+rule all_binning:
+  input:expand("maxbin/T2D_2/{sample}/", sample=SMPS)
 
 rule assembly:
   input:
-    in1="data/bbduk/T2D_2/{sample}_1.fastq.gz",
-    in2="data/bbduk/T2D_2/{sample}_2.fastq.gz"
+    in1="bbduk/T2D_2/{sample}_1.fastq.gz",
+    in2="bbduk/T2D_2/{sample}_2.fastq.gz"
   output:
-    directory("data/megahit/T2D_2/{sample}")
+    directory("megahit/T2D_2/{sample}")
   conda:
     "env.yaml"
   shell:
     "megahit -1 {input.in1} -2 {input.in2} -t 12 -o {output}"
-
+      
 rule binning:
   input:
-    contig="data/megahit/T2D_2/{sample}/final_contigs.fa",
-    reads="data/bbduk/T2D_2/{sample}_1.fastq.gz",
-    reads2="data/bbduk/T2D_2/{sample}_2.fastq.gz"
+    contig="megahit/T2D_2/{sample}/final.contigs.fa",
+    reads="bbduk/T2D_2/{sample}_1.fastq.gz",
+    reads2="bbduk/T2D_2/{sample}_2.fastq.gz"
   output:
-    "data/maxbin/T2D_2/{sample}/"}
+    "maxbin/T2D_2/{sample}"
   conda:
+    "env.yaml"
   shell:
-    "run_Maxbin.pl -thread 8 -contig {input.contig} -reads {input.reads} -reads2 {input.reads2} -out {output}"
+    "run_MaxBin.pl -thread 8 -contig {input.contig} -reads {input.reads} -reads2 {input.reads2} -out {output}"
+
+rule qc_binn:
+   input:
+    fasta="maxbin/T2D_2/{sample}",
+    ms="
+   output:
+    dir="checkm/T2D_2/{sample}",
+    file="checkm/T2D_2/{sample}/quality_JP4D.tsv"
+   conda:
+    "env.yaml"
+   shell:
+     """
+     checkm taxonomy_wf domain Bacteria -x fasta {input.fasta} {output.dir}
+     checkm qa {input.ms} {output.dir} --file {output.file} --tab_table -o 2
+     """
+rule dram:
+   input:
+   output:
+   conda:
+   shell:
+     
+#snakemake --profile config all_binn --slurm -c 20 -j 1 --rerun-incomplete
 
 #rules to be written: checkm, dram
-  
  
 
  
