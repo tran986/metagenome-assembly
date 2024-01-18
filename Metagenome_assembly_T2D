@@ -7,9 +7,6 @@
 [SMPS,PAIR] = glob_wildcards("bbduk/T2D_2/{sample}_{pair}.fastq.gz")
 print(list(set(SMPS)))
 
-rule all_binning:
-  input:expand("maxbin/T2D_2/{sample}/", sample=SMPS)
-
 rule assembly:
   input:
     in1="bbduk/T2D_2/{sample}_1.fastq.gz",
@@ -20,7 +17,21 @@ rule assembly:
     "env.yaml"
   shell:
     "megahit -1 {input.in1} -2 {input.in2} -t 12 -o {output}"
-      
+####
+rule all_bwa:
+   input:expand("bwa/T2D_2/{sample}.bam", sample=SMPS)
+
+rule bwa_align:
+   input:
+     "megahit/T2D_2/{sample}.fastq.gz",
+   output:
+     "bwa/T2D_2/{sample}.bam",
+   conda:
+     "env.yaml",
+   shell:
+     "bwa mem /fs/project/bradley.720/db/nonprokaryotic_genomes/gencode/44/all/GRCh38.p14.genome.fa.gz {input} > {output}"
+
+####
 rule binning:
   input:
     contig="megahit/T2D_2/{sample}/final.contigs.fa",
