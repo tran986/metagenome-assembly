@@ -1,7 +1,5 @@
 #run on T2D_5 and T2D_2 first:
 #input: bbduk_downstream files (pair-ended sequence)
-#run on T2D_5 and T2D_2 first:
-#input: bbduk_downstream files (pair-ended sequence)
 #output: checkm
 
 [SMPS,PAIR] = glob_wildcards("bbduk/T2D_2/{sample}_{pair}.fastq.gz")
@@ -17,32 +15,46 @@ rule assembly:
     "env.yaml"
   shell:
     "megahit -1 {input.in1} -2 {input.in2} -t 12 -o {output}"
-####
-rule all_bwa:
-   input:expand("bwa/T2D_2/{sample}.bam", sample=SMPS)
 
-rule bwa_align:
+rule all_bwa:
+   input:expand("bwa_index/T2D_2/{sample}/", sample=SMPS)
+
+rule bwa_index:
    input:
-     "megahit/T2D_2/{sample}.fastq.gz",
+     "megahit/T2D_2/{sample}/final.contigs.fa",
    output:
-     "bwa/T2D_2/{sample}.bam",
+     "bwa_index/T2D_2/{sample}/",
    conda:
      "env.yaml",
    shell:
-     "bwa mem /fs/project/bradley.720/db/nonprokaryotic_genomes/gencode/44/all/GRCh38.p14.genome.fa.gz {input} > {output}"
+     "bwa index {input} > {output}"
 
-####
-rule binning:
-  input:
-    contig="megahit/T2D_2/{sample}/final.contigs.fa",
-    reads="bbduk/T2D_2/{sample}_1.fastq.gz",
-    reads2="bbduk/T2D_2/{sample}_2.fastq.gz"
-  output:
-    "maxbin/T2D_2/{sample}"
-  conda:
-    "env.yaml"
-  shell:
-    "run_MaxBin.pl -thread 8 -contig {input.contig} -reads {input.reads} -reads2 {input.reads2} -out {output}"
+rule all_samtools:
+   input:expand("samtools/T2D_2/{sample}.bam", sample=SMPS)
+
+rule samtools:
+   input:
+     fasta="megahit/T2D_2/{sample}/final.contigs.fa",
+     r1="bbduk/T2D_2/{sample}_1.fastq.gz",
+     r2="bbduk/T2D_2/{sample}_2.fastq.gz"
+   output:
+     "samtools/T2D_2/{sample}.bam"
+   conda:
+     "env.yaml"
+   shell:
+     "bwa mem {input.fasta} {input.r1} {input.r2} > samtools view -1 -bS > {output}"
+
+"""
+rule metabat:
+   input:
+   output:
+    "metabat/T2D_2/{sample}/bin
+   conda:"env.yaml"
+   shell:
+     "runMetaBat.sh -i {input.fasta} {input.bam} -o {output}"
+
+
+
 
 rule qc_binn:
    input:
@@ -63,7 +75,7 @@ rule dram:
    output:
    conda:
    shell:
-     
+"""    
 #snakemake --profile config all_binn --slurm -c 20 -j 1 --rerun-incomplete
 
 #rules to be written: checkm, dram
