@@ -43,18 +43,21 @@ rule samtools:
    shell:
      "bwa mem {input.fasta} {input.r1} {input.r2} > samtools view -1 -bS > {output}"
 
+rule all_metabat:
+   input:expand("metabat/T2D_2/{sample}/bin/", sample=SMPS)
 
-
-"""
 rule metabat:
    input:
+    fasta="megahit/T2D_2/{sample}/final.contigs.fa",
+    bam="samtools/T2D_2/{sample}.bam"
    output:
-    "metabat/T2D_2/{sample}/bin
+    "metabat/T2D_2/{sample}/bin/"
    conda:"env.yaml"
    shell:
      "runMetaBat.sh -i {input.fasta} {input.bam} -o {output}"
 
-rule qc_binn:
+"""
+rule checkm:
    input:
     fasta="maxbin/T2D_2/{sample}",
     ms="
